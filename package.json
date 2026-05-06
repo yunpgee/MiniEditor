@@ -1,0 +1,60 @@
+{
+  "name": "mini-editor",
+  "productName": "MiniEditor",
+  "version": "0.1.0",
+  "author": "Qingyun PIAO",
+  "description": "A minimal Electron Markdown editor with math preview.",
+  "main": "src/main.js",
+  "scripts": {
+    "clean": "node scripts/clean-generated.js",
+    "predist": "node scripts/prepare-bundled-tinymist.js",
+    "start": "node scripts/start-electron.js",
+    "dist": "electron-builder",
+    "dist:dir": "electron-builder --dir",
+    "dist:win": "electron-builder --win"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/search": "^6.7.0",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.41.1",
+    "katex": "^0.16.11",
+    "markdown-it": "^14.1.1"
+  },
+  "devDependencies": {
+    "electron": "^41.4.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.qingyunpiao.minieditor",
+    "productName": "MiniEditor",
+    "files": [
+      "src/**/*",
+      "package.json",
+      "README.md"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/bin",
+        "to": "bin",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "zip"
+      ]
+    }
+  }
+}

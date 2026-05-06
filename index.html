@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiniEditor</title>
+    <link rel="stylesheet" href="../node_modules/katex/dist/katex.min.css">
+    <link rel="stylesheet" href="./styles.css">
+    <script type="importmap">
+      {
+        "imports": {
+          "@codemirror/state": "../node_modules/@codemirror/state/dist/index.js",
+          "@codemirror/view": "../node_modules/@codemirror/view/dist/index.js",
+          "@codemirror/commands": "../node_modules/@codemirror/commands/dist/index.js",
+          "@codemirror/language": "../node_modules/@codemirror/language/dist/index.js",
+          "@lezer/common": "../node_modules/@lezer/common/dist/index.js",
+          "@lezer/highlight": "../node_modules/@lezer/highlight/dist/index.js",
+          "@marijn/find-cluster-break": "../node_modules/@marijn/find-cluster-break/src/index.js",
+          "markdown-it": "../node_modules/markdown-it/index.mjs",
+          "linkify-it": "../node_modules/linkify-it/index.mjs",
+          "mdurl": "../node_modules/mdurl/index.mjs",
+          "punycode.js": "../node_modules/punycode.js/punycode.es6.js",
+          "uc.micro": "../node_modules/uc.micro/index.mjs",
+          "entities": "../node_modules/entities/lib/esm/index.js",
+          "crelt": "../node_modules/crelt/index.js",
+          "style-mod": "../node_modules/style-mod/src/style-mod.js",
+          "w3c-keyname": "../node_modules/w3c-keyname/index.js"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <header class="toolbar">
+      <div class="toolbar-lead">
+        <button id="menuButton" class="icon-button" type="button" title="メニュー" aria-label="メニュー">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 7h14M5 12h14M5 17h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="file-state">
+        <strong id="fileName">untitled.md</strong>
+        <span id="dirtyMark" aria-label="unsaved changes"></span>
+      </div>
+      <div class="actions">
+        <button id="undoButton" class="icon-button" type="button" title="元に戻す" aria-label="元に戻す">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 14 4 9l5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 9h10.5A5.5 5.5 0 0 1 20 14.5V20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="redoButton" class="icon-button" type="button" title="やり直す" aria-label="やり直す">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 14 5-5-5-5" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5V20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="newButton" class="icon-button" type="button" title="新規" aria-label="新規">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="openButton" class="icon-button" type="button" title="開く" aria-label="開く">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 19V6.5h6.2l2 2H21v3.2" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M3 19l2.4-8h16L19 19z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="saveButton" class="icon-button" type="button" title="保存" aria-label="保存">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 4v6h8V4M8 20v-7h8v7" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        </button>
+        <button id="saveAsButton" class="icon-button" type="button" title="別名で保存" aria-label="別名で保存">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h11l3 3v6.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M4 4v16h8.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M7 4v6h7V4M8 20v-6h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="m14 19 5.3-5.3a1.4 1.4 0 0 1 2 2L16 21l-3 .8z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+        </button>
+        <span class="toolbar-divider" aria-hidden="true"></span>
+        <button id="searchButton" class="icon-button" type="button" title="検索" aria-label="検索">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="M16 16l4 4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="folderTreeButton" class="icon-button" type="button" title="フォルダツリー" aria-label="フォルダツリー">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h6l2 2h8v10H4z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 10h8M8 14h5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <button id="researchButton" class="icon-button" type="button" title="アウトラインと参照" aria-label="アウトラインと参照">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 5h6M5 12h10M5 19h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M17 8.5a3.5 3.5 0 1 1-2.5 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="m18.5 15.5 2.5 2.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        </button>
+        <span id="sidebarDivider" class="toolbar-divider" aria-hidden="true"></span>
+        <button id="previewButton" class="icon-button preview-icon-button" type="button" title="プレビュー" aria-label="プレビュー">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6z" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="2.2"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <section id="findPanel" class="find-panel" aria-label="Find and replace" hidden>
+      <input id="findInput" type="search" placeholder="Find">
+      <input id="replaceInput" type="text" placeholder="Replace" hidden>
+      <button id="findPreviousButton" type="button">Previous</button>
+      <button id="findNextButton" type="button">Next</button>
+      <button id="replaceButton" type="button" hidden>Replace</button>
+      <button id="replaceAllButton" type="button" hidden>Replace All</button>
+      <button id="closeFindButton" type="button" title="Close">Close</button>
+    </section>
+
+    <main class="workspace">
+      <aside id="folderTreePane" class="folder-tree-pane" aria-label="Folder tree" hidden>
+        <div class="folder-tree-header">
+          <div class="folder-tree-actions">
+            <button id="folderUpButton" type="button">Up</button>
+            <button id="openFolderButton" type="button">Open</button>
+          </div>
+        </div>
+        <nav id="folderTree" class="folder-tree" aria-label="Files"></nav>
+        <div id="folderTreeStatus" class="folder-tree-status">Open a folder to browse files.</div>
+      </aside>
+      <div id="folderSplitter" class="splitter folder-splitter" role="separator" aria-orientation="vertical" aria-label="Resize folder tree"></div>
+      <section class="pane editor-pane" aria-label="Markdown editor">
+        <div class="editor-shell">
+          <div id="editor" class="editor-host" aria-label="Markdown editor"></div>
+        </div>
+      </section>
+      <div id="splitter" class="splitter" role="separator" aria-orientation="vertical" aria-label="Resize preview"></div>
+      <section class="pane preview-pane" aria-label="Markdown preview">
+        <div id="typstPreviewControls" class="typst-preview-controls" hidden>
+          <button id="typstZoomOutButton" class="icon-button" type="button" title="Zoom out" aria-label="Zoom out">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+          <button id="typstActualButton" class="icon-button typst-scale-button" type="button" title="100%" aria-label="100%">
+            100%
+          </button>
+          <button id="typstFitButton" class="icon-button typst-fit-button" type="button" title="Fit width" aria-label="Fit width">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 8V5h3M16 5h3v3M5 16v3h3M16 19h3v-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M9 5h6M9 19h6M5 9v6M19 9v6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+          </button>
+          <button id="typstZoomInButton" class="icon-button" type="button" title="Zoom in" aria-label="Zoom in">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 12h12M12 6v12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </button>
+        </div>
+        <article id="preview" class="preview"></article>
+      </section>
+      <div id="researchSplitter" class="splitter research-splitter" role="separator" aria-orientation="vertical" aria-label="Resize outline and references"></div>
+      <aside id="researchPane" class="research-pane" aria-label="Outline and references" hidden>
+        <div class="research-header">
+          <strong>Outline</strong>
+        </div>
+        <section class="research-section">
+          <div class="research-section-title">Headings</div>
+          <nav id="outlineList" class="outline-list" aria-label="Document outline"></nav>
+        </section>
+        <section class="research-section">
+          <div class="research-section-title">References</div>
+          <div id="referenceChecks" class="reference-checks" aria-live="polite"></div>
+        </section>
+      </aside>
+    </main>
+
+    <footer id="statusBar" class="status-bar">
+      <span id="cursorStatus">Ln 1, Col 1</span>
+      <span id="countStatus">0 chars</span>
+      <span>UTF-8</span>
+      <span id="fileTypeStatus">Markdown</span>
+    </footer>
+
+    <script src="../node_modules/katex/dist/katex.min.js"></script>
+    <script src="../node_modules/katex/dist/contrib/auto-render.min.js"></script>
+    <script type="module" src="./renderer.js"></script>
+  </body>
+</html>
